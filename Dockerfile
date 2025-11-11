@@ -27,7 +27,7 @@ RUN cd MiniRAG && pip install -e .
 COPY . .
 
 # Create necessary directories
-RUN mkdir -p logs/insurance_rag data
+RUN mkdir -p logs/insurance_rag data insurance_rag
 
 # Set environment variables
 ENV PYTHONPATH=/app:$PYTHONPATH
