@@ -104,7 +104,18 @@ swaggerui_blueprint = get_swaggerui_blueprint(
         'app_name': "Insurance Bot API",
         'persistAuthorization': True,  # Lưu API key sau khi refresh
         'defaultModelsExpandDepth': 1,
-        'defaultModelExpandDepth': 1
+        'defaultModelExpandDepth': 1,
+        'onComplete': f'''
+        function() {{
+            // Auto-set API key when Swagger UI loads
+            const apiKey = "{API_SECRET_KEY}";
+            if (window.ui) {{
+                window.ui.preauthorizeApiKey("BearerAuth", apiKey);
+                window.ui.preauthorizeApiKey("ApiKeyAuth", apiKey);
+                console.log("✅ API Key auto-set:", apiKey);
+            }}
+        }}
+        '''
     },
 )
 
@@ -391,44 +402,62 @@ def api_spec():
 @app.after_request
 def inject_swagger_auth(response):
     """Inject JavaScript to auto-set API key in Swagger UI"""
-    if request.path.startswith('/api/docs') and response.content_type and 'text/html' in response.content_type:
-        api_key = API_SECRET_KEY
-        script = f"""
-        <script>
-        (function() {{
-            // Wait for Swagger UI to load
-            function setApiKey() {{
-                if (window.ui) {{
-                    // Set API key in Swagger UI
-                    window.ui.preauthorizeApiKey('BearerAuth', '{api_key}');
-                    window.ui.preauthorizeApiKey('ApiKeyAuth', '{api_key}');
-                    console.log('✅ API Key auto-set:', '{api_key}');
-                }} else {{
-                    setTimeout(setApiKey, 100);
-                }}
-            }}
-            // Run on page load
-            if (document.readyState === 'loading') {{
-                document.addEventListener('DOMContentLoaded', setApiKey);
-            }} else {{
-                setApiKey();
-            }}
-            // Also set in localStorage for persistence
-            try {{
-                const authData = {{
-                    BearerAuth: {{ value: '{api_key}' }},
-                    ApiKeyAuth: {{ value: '{api_key}' }}
-                }};
-                localStorage.setItem('swagger-ui-auth', JSON.stringify(authData));
-            }} catch(e) {{
-                console.warn('Could not save to localStorage:', e);
-            }}
-        }})();
-        </script>
-        """
-        # Inject script before closing body tag
-        if hasattr(response, 'data'):
-            response.data = response.data.decode('utf-8').replace('</body>', script + '</body>')
+    api_key = API_SECRET_KEY
+    if request.path == '/api/docs/' and response.content_type and 'text/html' in response.content_type:
+        try:
+            # Decode response data
+            if hasattr(response, 'data'):
+                html = response.data.decode('utf-8')
+                # Inject script before closing body tag
+                script = f"""
+<script>
+(function() {{
+    const apiKey = '{api_key}';
+    
+    // Save to localStorage for persistence
+    try {{
+        const authData = {{
+            BearerAuth: {{ value: apiKey }},
+            ApiKeyAuth: {{ value: apiKey }}
+        }};
+        localStorage.setItem('swagger-ui-auth', JSON.stringify(authData));
+        console.log('✅ API Key saved to localStorage');
+    }} catch(e) {{
+        console.warn('Could not save to localStorage:', e);
+    }}
+    
+    // Auto-set API key when Swagger UI loads
+    function setApiKey() {{
+        if (window.ui && typeof window.ui.preauthorizeApiKey === 'function') {{
+            window.ui.preauthorizeApiKey('BearerAuth', apiKey);
+            window.ui.preauthorizeApiKey('ApiKeyAuth', apiKey);
+            console.log('✅ API Key auto-set:', apiKey);
+            return true;
+        }}
+        return false;
+    }}
+    
+    // Try multiple times until Swagger UI is ready
+    let attempts = 0;
+    const maxAttempts = 50;
+    const interval = setInterval(function() {{
+        attempts++;
+        if (setApiKey() || attempts >= maxAttempts) {{
+            clearInterval(interval);
+        }}
+    }}, 200);
+    
+    // Also try on window load
+    window.addEventListener('load', function() {{
+        setTimeout(setApiKey, 1000);
+    }});
+}})();
+</script>
+"""
+                html = html.replace('</body>', script + '</body>')
+                response.data = html.encode('utf-8')
+        except Exception as e:
+            logger.warning(f"Could not inject auth script: {e}")
     return response
 
 @app.route("/health", methods=["GET"])
