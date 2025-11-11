@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test API integration - Giả lập frontend gọi API
+Test API integration - Giả lập frontend gọi API với authentication
 """
 
 import requests
