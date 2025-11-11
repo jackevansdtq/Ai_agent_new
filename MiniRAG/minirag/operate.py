@@ -1378,7 +1378,8 @@ async def _build_mini_query_context(
         ent_from_query_dict, chunks_ids, chunk_nums=int(query_param.top_k / 2)
     )
 
-    if not len(results_node):
+    # Fix: Check nodes_from_query_list instead of results_node (which is local to loop)
+    if not nodes_from_query_list or not any(nodes_from_query_list):
         return None
 
     if not len(results_edge):
