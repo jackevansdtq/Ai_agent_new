@@ -169,7 +169,7 @@ def swagger_ui_index():
     <script>
         const apiKey = '{api_key}';
         
-        // Swagger UI configuration
+        // Swagger UI configuration - Professional setup
         window.onload = function() {{
             const ui = SwaggerUIBundle({{
                 url: "/api/spec",
@@ -184,12 +184,26 @@ def swagger_ui_index():
                 ],
                 layout: "StandaloneLayout",
                 persistAuthorization: true,
+                defaultModelsExpandDepth: 1,
+                defaultModelExpandDepth: 1,
+                docExpansion: "list",
+                filter: true,
+                showExtensions: true,
+                showCommonExtensions: true,
+                tryItOutEnabled: true,
+                requestInterceptor: function(request) {{
+                    // Ensure API key is always sent
+                    if (!request.headers.Authorization && !request.headers['X-API-Key']) {{
+                        request.headers['X-API-Key'] = apiKey;
+                    }}
+                    return request;
+                }},
                 onComplete: function() {{
                     // Auto-set API key when Swagger UI loads
-                    if (window.ui) {{
+                    if (window.ui && typeof window.ui.preauthorizeApiKey === 'function') {{
                         window.ui.preauthorizeApiKey("BearerAuth", apiKey);
                         window.ui.preauthorizeApiKey("ApiKeyAuth", apiKey);
-                        console.log("✅ API Key auto-set:", apiKey);
+                        console.log("✅ API Key tự động được set:", apiKey);
                     }}
                 }}
             }});
@@ -197,14 +211,21 @@ def swagger_ui_index():
             // Store ui instance globally
             window.ui = ui;
             
-            // Also try to set API key after a delay
-            setTimeout(function() {{
+            // Auto-set API key with retry mechanism
+            let attempts = 0;
+            const maxAttempts = 10;
+            const setApiKeyInterval = setInterval(function() {{
+                attempts++;
                 if (window.ui && typeof window.ui.preauthorizeApiKey === 'function') {{
                     window.ui.preauthorizeApiKey("BearerAuth", apiKey);
                     window.ui.preauthorizeApiKey("ApiKeyAuth", apiKey);
-                    console.log("✅ API Key auto-set (delayed):", apiKey);
+                    console.log("✅ API Key đã được set tự động");
+                    clearInterval(setApiKeyInterval);
+                }} else if (attempts >= maxAttempts) {{
+                    console.warn("⚠️ Không thể auto-set API key. Vui lòng nhập thủ công vào nút Authorize.");
+                    clearInterval(setApiKeyInterval);
                 }}
-            }}, 1000);
+            }}, 300);
         }};
     </script>
 </body>
@@ -226,11 +247,15 @@ bot: Optional[InsuranceBotMiniRAG] = None
 OPENAPI_SPEC = {
     "openapi": "3.0.3",
     "info": {
-        "title": "Insurance Bot API",
-        "description": "REST API cho chatbot bảo hiểm FISS ",
+        "title": "FISS Insurance Bot API",
+        "description": "REST API chuyên nghiệp cho chatbot bảo hiểm FISS. API này cung cấp khả năng chat với bot thông minh để trả lời các câu hỏi về bảo hiểm.\n\n## Authentication\n\nAPI key bắt buộc phải được cung cấp trong header:\n- **X-API-Key**: `fiss-c61197f847cc4682a91ada560bbd7119`\n- **Hoặc Authorization**: `Bearer fiss-c61197f847cc4682a91ada560bbd7119`\n\n## Quick Start\n\n1. Click nút **Authorize** (🔒) ở góc trên bên phải\n2. Nhập API key vào một trong hai options\n3. Click **Authorize** → **Close**\n4. Test API bằng cách click **Try it out** và **Execute**",
         "version": "1.0.0",
         "contact": {
-            "name": "FISS Insurance Team"
+            "name": "FISS Insurance Team",
+            "email": "support@fiss.com"
+        },
+        "license": {
+            "name": "Proprietary"
         }
     },
     "servers": [
@@ -262,7 +287,7 @@ OPENAPI_SPEC = {
         "/chat": {
             "post": {
                 "summary": "Chat với Bot",
-                "description": "Gửi tin nhắn để chat với bot bảo hiểm",
+                "description": "Gửi tin nhắn để chat với bot bảo hiểm FISS. API key bắt buộc phải được cung cấp trong header.",
                 "security": [
                     {
                         "ApiKeyAuth": []
@@ -271,27 +296,63 @@ OPENAPI_SPEC = {
                         "BearerAuth": []
                     }
                 ],
+                "parameters": [
+                    {
+                        "name": "x-api-version",
+                        "in": "header",
+                        "description": "API version (optional)",
+                        "required": False,
+                        "schema": {
+                            "type": "string",
+                            "default": "1.0.0"
+                        },
+                        "example": "1.0.0"
+                    }
+                ],
                 "requestBody": {
                     "required": True,
+                    "description": "Request body chứa câu hỏi cần chat với bot",
                     "content": {
                         "application/json": {
                             "schema": {
                                 "$ref": "#/components/schemas/ChatRequest"
                             },
                             "example": {
-                                "message": "Bảo hiểm xe máy là gì?",
-                                "session_id": "optional_session_id"
+                                "message": "Bảo hiểm xe máy là gì?"
                             }
                         }
                     }
                 },
                 "responses": {
                     "200": {
-                        "description": "Chat response",
+                        "description": "Chat response thành công",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ChatResponse"
+                                },
+                                "example": {
+                                    "response": "Bảo hiểm xe máy là loại hình bảo hiểm bắt buộc theo quy định của pháp luật Việt Nam...",
+                                    "timestamp": 1731316800.123,
+                                    "session_id": "session_123",
+                                    "processing_time": 2.5
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Thiếu hoặc sai API key",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "example": {
+                                    "error": {
+                                        "message": "Missing API key. Please provide your API key in the Authorization header (Bearer token) or X-API-Key header.",
+                                        "type": "authentication_error",
+                                        "code": "missing_api_key"
+                                    }
                                 }
                             }
                         }
@@ -369,15 +430,16 @@ OPENAPI_SPEC = {
                 "properties": {
                     "message": {
                         "type": "string",
-                        "description": "Tin nhắn cần chat với bot",
+                        "description": "Câu hỏi hoặc tin nhắn cần chat với bot",
                         "example": "Bảo hiểm xe máy là gì?"
                     },
                     "session_id": {
                         "type": "string",
-                        "description": "Session ID (tùy chọn)",
+                        "description": "Session ID để duy trì context cuộc hội thoại (tùy chọn)",
                         "example": "session_123"
                     }
-                }
+                },
+                "additionalProperties": False
             },
             "ChatResponse": {
                 "type": "object",
@@ -444,15 +506,14 @@ OPENAPI_SPEC = {
                 "type": "apiKey",
                 "in": "header",
                 "name": "X-API-Key",
-                "description": "API Key for authentication (can also use Authorization: Bearer YOUR_API_KEY)",
+                "description": "API Key cho authentication. Nhập API key của bạn vào đây.",
                 "x-default": "fiss-c61197f847cc4682a91ada560bbd7119"
             },
             "BearerAuth": {
                 "type": "http",
                 "scheme": "bearer",
                 "bearerFormat": "API Key",
-                "description": "Bearer token authentication (Authorization: Bearer YOUR_API_KEY)",
-                "x-default": "fiss-c61197f847cc4682a91ada560bbd7119"
+                "description": "Bearer token authentication. Format: Bearer YOUR_API_KEY. Nhập API key của bạn vào đây (không cần gõ 'Bearer')."
             }
         },
         "security": [
