@@ -56,7 +56,15 @@ def require_api_key(f):
             auth_header = request.headers.get('Authorization')
             api_key = request.headers.get('X-API-Key')  # Alternative header
 
+            # DEBUG: Log all headers and API key
+            logger.info(f"🔍 DEBUG AUTH - All headers: {dict(request.headers)}")
+            logger.info(f"🔍 DEBUG AUTH - Authorization header: {auth_header}")
+            logger.info(f"🔍 DEBUG AUTH - X-API-Key header: {api_key}")
+            logger.info(f"🔍 DEBUG AUTH - Expected API_SECRET_KEY: {API_SECRET_KEY}")
+            logger.info(f"🔍 DEBUG AUTH - REQUIRE_API_KEY: {REQUIRE_API_KEY}")
+
             if not auth_header and not api_key:
+                logger.warning("❌ AUTH FAILED - Missing both Authorization and X-API-Key headers")
                 return jsonify({
                     "error": {
                         "message": "Missing API key. Please provide your API key in the Authorization header (Bearer token) or X-API-Key header.",
@@ -68,6 +76,7 @@ def require_api_key(f):
             # Check Bearer token format
             if auth_header:
                 if not auth_header.startswith('Bearer '):
+                    logger.warning(f"❌ AUTH FAILED - Invalid Authorization format: {auth_header}")
                     return jsonify({
                         "error": {
                             "message": "Invalid Authorization header format. Use 'Bearer YOUR_API_KEY' format.",
@@ -77,11 +86,19 @@ def require_api_key(f):
                     }), 401
 
                 provided_key = auth_header.replace('Bearer ', '', 1)
+                logger.info(f"🔍 DEBUG AUTH - Extracted key from Bearer: {provided_key[:20]}...")
             else:
                 provided_key = api_key
+                logger.info(f"🔍 DEBUG AUTH - Using X-API-Key: {provided_key[:20] if provided_key else 'None'}...")
 
             # Validate API key
+            logger.info(f"🔍 DEBUG AUTH - Comparing keys:")
+            logger.info(f"   Provided: '{provided_key}' (len={len(provided_key) if provided_key else 0})")
+            logger.info(f"   Expected: '{API_SECRET_KEY}' (len={len(API_SECRET_KEY)})")
+            logger.info(f"   Match: {provided_key == API_SECRET_KEY}")
+            
             if provided_key != API_SECRET_KEY:
+                logger.warning(f"❌ AUTH FAILED - Key mismatch. Provided: '{provided_key}', Expected: '{API_SECRET_KEY}'")
                 return jsonify({
                     "error": {
                         "message": "Invalid API key provided.",
@@ -90,6 +107,7 @@ def require_api_key(f):
                     }
                 }), 401
 
+            logger.info("✅ AUTH SUCCESS - API key validated")
         return f(*args, **kwargs)
     return decorated_function
 
