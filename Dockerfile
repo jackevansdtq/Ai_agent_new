@@ -14,6 +14,10 @@ RUN apt-get update && apt-get install -y \
 COPY core/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install MiniRAG framework locally
+COPY MiniRAG/ ./MiniRAG/
+RUN cd MiniRAG && pip install -e .
+
 # Copy project files
 COPY . .
 
