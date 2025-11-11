@@ -1,5 +1,5 @@
-# Use Python 3.9 slim image (more stable for ML packages)
-FROM python:3.9-slim
+# Use Python 3.10 slim image (supports union types |)
+FROM python:3.10-slim
 
 # Set working directory
 WORKDIR /app
