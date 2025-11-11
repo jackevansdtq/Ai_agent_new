@@ -463,3 +463,100 @@
 2025-11-11 22:28:23,359 - minirag - INFO - Load KV text_chunks with 96 data
 2025-11-11 22:28:23,903 - minirag - INFO - Loaded graph from /Volumes/data/MINIRAG/logs/insurance_rag/graph_chunk_entity_relation.graphml with 3331 nodes, 3142 edges
 2025-11-11 22:28:24,750 - minirag - INFO - Loaded document status storage with 13 records
+2025-11-11 23:42:55,195 - minirag - INFO - Loaded document status storage with 13 records
+2025-11-11 23:43:08,696 - minirag - INFO - Query: bảo hiểm xe máy, top_k: 30, cosine_better_than_threshold: 0.3
+2025-11-11 23:43:10,637 - minirag - INFO - Query: giá, top_k: 30, cosine_better_than_threshold: 0.3
+2025-11-11 23:43:12,469 - minirag - INFO - Query: bảo hiểm xe máy giá bao nhiêu, top_k: 60, cosine_better_than_threshold: 0.3
+2025-11-11 23:43:21,892 - minirag - INFO - Query: bảo hiểm xe máy giá bao nhiêu, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:33:35,433 - minirag - INFO - Logger initialized for working directory: ./logs/insurance_rag
+2025-11-11 23:33:35,436 - minirag - INFO - Load KV json_doc_status_storage with 0 data
+2025-11-11 23:33:35,436 - minirag - INFO - Load KV llm_response_cache with 0 data
+2025-11-11 23:33:35,440 - minirag - INFO - Load KV full_docs with 13 data
+2025-11-11 23:33:35,443 - minirag - INFO - Load KV text_chunks with 96 data
+2025-11-11 23:33:36,120 - minirag - INFO - Loaded graph from ./logs/insurance_rag/graph_chunk_entity_relation.graphml with 3331 nodes, 3142 edges
+2025-11-11 23:33:38,778 - minirag - INFO - Loaded document status storage with 13 records
+2025-11-11 23:34:47,461 - minirag - INFO - Query: bảo hiểm xe máy, top_k: 30, cosine_better_than_threshold: 0.3
+2025-11-11 23:34:49,403 - minirag - INFO - Query: insurance, top_k: 30, cosine_better_than_threshold: 0.3
+2025-11-11 23:34:51,515 - minirag - INFO - Query: bảo hiểm xe máy là gì, top_k: 60, cosine_better_than_threshold: 0.3
+2025-11-11 23:35:00,753 - minirag - INFO - Query: bảo hiểm xe máy, top_k: 30, cosine_better_than_threshold: 0.3
+2025-11-11 23:35:01,539 - minirag - INFO - Query: bảo hiểm xe máy là gì, top_k: 30, cosine_better_than_threshold: 0.3
+2025-11-11 23:35:20,474 - minirag - INFO - Query: bảo hiểm xe máy là gì, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:35:20,477 - minirag - INFO - Query: bảo hiểm xe máy là gì, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:36:29,747 - minirag - INFO - Query: test, top_k: 0, cosine_better_than_threshold: 0.3
+2025-11-11 23:36:29,841 - minirag - INFO - Query: test, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:37:06,256 - minirag - INFO - Logger initialized for working directory: ./logs/insurance_rag
+2025-11-11 23:37:06,260 - minirag - INFO - Load KV json_doc_status_storage with 0 data
+2025-11-11 23:37:06,261 - minirag - INFO - Load KV llm_response_cache with 0 data
+2025-11-11 23:37:06,266 - minirag - INFO - Load KV full_docs with 13 data
+2025-11-11 23:37:06,270 - minirag - INFO - Load KV text_chunks with 96 data
+2025-11-11 23:37:06,626 - minirag - INFO - Loaded graph from ./logs/insurance_rag/graph_chunk_entity_relation.graphml with 3331 nodes, 3142 edges
+2025-11-11 23:37:08,215 - minirag - INFO - Loaded document status storage with 13 records
+2025-11-11 23:37:21,657 - minirag - INFO - Query: hi, top_k: 0, cosine_better_than_threshold: 0.3
+2025-11-11 23:37:21,708 - minirag - INFO - Query: hi, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:37:33,176 - minirag - INFO - Query: chào bạn, top_k: 0, cosine_better_than_threshold: 0.3
+2025-11-11 23:37:33,226 - minirag - INFO - Query: chào bạn, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:37:37,781 - minirag - INFO - Query: hi, top_k: 0, cosine_better_than_threshold: 0.3
+2025-11-11 23:37:37,871 - minirag - INFO - Query: hi, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:37:49,211 - minirag - INFO - Query: hidasdsadasd, top_k: 0, cosine_better_than_threshold: 0.3
+2025-11-11 23:37:49,272 - minirag - INFO - Query: hidasdsadasd, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:38:16,414 - minirag - INFO - Query: chào bạn, top_k: 0, cosine_better_than_threshold: 0.3
+2025-11-11 23:38:16,500 - minirag - INFO - Query: chào bạn, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:43:33,044 - minirag - INFO - Query: chào bạn, top_k: 0, cosine_better_than_threshold: 0.3
+2025-11-11 23:43:33,480 - minirag - INFO - Query: chào bạn, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:43:42,043 - minirag - INFO - Query: hello, top_k: 0, cosine_better_than_threshold: 0.3
+2025-11-11 23:43:42,184 - minirag - INFO - Query: hello, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:45:50,668 - minirag - INFO - Logger initialized for working directory: ./logs/insurance_rag
+2025-11-11 23:45:50,671 - minirag - INFO - Load KV json_doc_status_storage with 0 data
+2025-11-11 23:45:50,671 - minirag - INFO - Load KV llm_response_cache with 0 data
+2025-11-11 23:45:50,676 - minirag - INFO - Load KV full_docs with 13 data
+2025-11-11 23:45:50,681 - minirag - INFO - Load KV text_chunks with 96 data
+2025-11-11 23:45:51,027 - minirag - INFO - Loaded graph from ./logs/insurance_rag/graph_chunk_entity_relation.graphml with 3331 nodes, 3142 edges
+2025-11-11 23:45:53,027 - minirag - INFO - Loaded document status storage with 13 records
+2025-11-11 23:45:57,944 - minirag - INFO - Query: xin chào, top_k: 0, cosine_better_than_threshold: 0.3
+2025-11-11 23:45:57,968 - minirag - INFO - Query: xin chào, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:46:15,346 - minirag - INFO - Query: bảo hiểm, top_k: 30, cosine_better_than_threshold: 0.3
+2025-11-11 23:46:16,456 - minirag - INFO - Query: bảo hiểm là gì, top_k: 30, cosine_better_than_threshold: 0.3
+2025-11-11 23:46:41,934 - minirag - INFO - Query: Bảo hiểm xe máy, top_k: 30, cosine_better_than_threshold: 0.3
+2025-11-11 23:46:43,893 - minirag - INFO - Query: Bảo hiểm xe máy là gì?, top_k: 30, cosine_better_than_threshold: 0.3
+2025-11-11 23:46:43,896 - minirag - INFO - Query: bảo hiểm là gì, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:46:44,772 - minirag - INFO - Query: Bảo hiểm xe máy là gì?, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:47:38,996 - minirag - INFO - Query: bảo hiểm sức khoẻ, top_k: 30, cosine_better_than_threshold: 0.3
+2025-11-11 23:48:06,553 - minirag - INFO - Query: bảo hiểm xe máy, top_k: 30, cosine_better_than_threshold: 0.3
+2025-11-11 23:48:08,798 - minirag - INFO - Query: bảo hiểm sức khoẻ với bảo hiểm xe máy so sánh, top_k: 60, cosine_better_than_threshold: 0.3
+2025-11-11 23:48:10,228 - minirag - INFO - Query: bảo hiểm sức khoẻ với bảo hiểm xe máy so sánh, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:50:16,413 - minirag - INFO - Query: bảo hiểm, top_k: 30, cosine_better_than_threshold: 0.3
+2025-11-11 23:50:17,718 - minirag - INFO - Query: xe máy 50cc, top_k: 30, cosine_better_than_threshold: 0.3
+2025-11-11 23:50:19,928 - minirag - INFO - Query: giá bảo hiểm xe máy 50cc, top_k: 60, cosine_better_than_threshold: 0.3
+2025-11-11 23:50:21,471 - minirag - INFO - Query: giá bảo hiểm xe máy 50cc, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:52:11,168 - minirag - INFO - Query: giá, top_k: 30, cosine_better_than_threshold: 0.3
+2025-11-11 23:52:12,948 - minirag - INFO - Query: thuế, top_k: 30, cosine_better_than_threshold: 0.3
+2025-11-11 23:52:14,958 - minirag - INFO - Query: giá đã bao gồm thuế chưa?, top_k: 60, cosine_better_than_threshold: 0.3
+2025-11-11 23:52:15,346 - minirag - INFO - Query: giá đã bao gồm thuế chưa?, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-11 23:53:37,031 - minirag - INFO - Logger initialized for working directory: ./logs/insurance_rag
+2025-11-11 23:53:37,033 - minirag - INFO - Load KV json_doc_status_storage with 0 data
+2025-11-11 23:53:37,033 - minirag - INFO - Load KV llm_response_cache with 0 data
+2025-11-11 23:53:37,037 - minirag - INFO - Load KV full_docs with 13 data
+2025-11-11 23:53:37,040 - minirag - INFO - Load KV text_chunks with 96 data
+2025-11-11 23:53:37,344 - minirag - INFO - Loaded graph from ./logs/insurance_rag/graph_chunk_entity_relation.graphml with 3331 nodes, 3142 edges
+2025-11-11 23:53:39,031 - minirag - INFO - Loaded document status storage with 13 records
+2025-11-11 23:54:29,000 - minirag - INFO - Query: Phí bảo hiểm, Rủi ro, Bảo hiểm bắt buộc, Bảo hiểm tự nguyện, Đền bù, top_k: 10, cosine_better_than_threshold: 0.3
+2025-11-11 23:55:03,287 - minirag - INFO - Local query uses 10 entites, 43 relations, 1 text units
+2025-11-11 23:55:05,115 - minirag - INFO - Query: Bảo hiểm xe máy, Insurance, Motorcycle insurance, top_k: 10, cosine_better_than_threshold: 0.3
+2025-11-11 23:55:05,176 - minirag - INFO - Global query uses 0 entites, 10 relations, 1 text units
+2025-11-11 23:55:21,727 - minirag - INFO - Query: Định nghĩa, Chi phí, Quyền lợi, Bảo vệ, Tai nạn, top_k: 5, cosine_better_than_threshold: 0.3
+2025-11-11 23:55:21,790 - minirag - INFO - Local query uses 5 entites, 31 relations, 1 text units
+2025-11-11 23:55:23,555 - minirag - INFO - Query: Bảo hiểm, Xe máy, top_k: 5, cosine_better_than_threshold: 0.3
+2025-11-11 23:55:23,585 - minirag - INFO - Global query uses 2 entites, 5 relations, 1 text units
+2025-11-11 23:56:06,254 - minirag - INFO - Logger initialized for working directory: ./logs/insurance_rag
+2025-11-11 23:56:06,256 - minirag - INFO - Load KV json_doc_status_storage with 0 data
+2025-11-11 23:56:06,257 - minirag - INFO - Load KV llm_response_cache with 0 data
+2025-11-11 23:56:06,260 - minirag - INFO - Load KV full_docs with 13 data
+2025-11-11 23:56:06,263 - minirag - INFO - Load KV text_chunks with 96 data
+2025-11-11 23:56:06,622 - minirag - INFO - Loaded graph from ./logs/insurance_rag/graph_chunk_entity_relation.graphml with 3331 nodes, 3142 edges
+2025-11-11 23:56:08,113 - minirag - INFO - Loaded document status storage with 13 records
+2025-11-11 23:56:54,710 - minirag - INFO - Query: Bảo hiểm xe máy là gì?, top_k: 5, cosine_better_than_threshold: 0.3
+2025-11-11 23:57:22,865 - minirag - INFO - Truncate 5 to 1 chunks
+2025-11-11 23:57:38,124 - minirag - INFO - Query: Pháp luật, Bảo vệ tài sản, Chi phí bảo hiểm, Rủi ro, Trách nhiệm pháp lý, top_k: 3, cosine_better_than_threshold: 0.3
+2025-11-11 23:57:38,191 - minirag - INFO - Local query uses 3 entites, 2 relations, 0 text units
+2025-11-11 23:57:40,077 - minirag - INFO - Query: Bảo hiểm xe máy, Bảo hiểm, Xe máy, top_k: 3, cosine_better_than_threshold: 0.3
+2025-11-11 23:57:40,121 - minirag - INFO - Global query uses 1 entites, 3 relations, 0 text units

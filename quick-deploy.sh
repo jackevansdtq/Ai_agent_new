@@ -64,9 +64,9 @@ deploy_services() {
     # Stop any existing services
     docker-compose down 2>/dev/null || true
 
-    # Use external Neo4J configuration
-    echo -e "${YELLOW}🔗 Using external Neo4J server configuration...${NC}"
-    cp docker-compose-external.yml docker-compose.yml
+    # Use simple configuration (no monitoring)
+    echo -e "${YELLOW}🔗 Using simple configuration (external Neo4J, no monitoring)...${NC}"
+    cp docker-compose-simple.yml docker-compose.yml
 
     # Start services
     docker-compose up -d

@@ -39,6 +39,8 @@ services:
       WORKING_DIR: ${WORKING_DIR:-./logs/insurance_rag}
       LLM_MODEL_DIR: ${LLM_MODEL_DIR:-./}
       NLTK_DATA: ${NLTK_DATA:-./nltk_data}
+      TOP_K: ${TOP_K:-10}
+      COSINE_THRESHOLD: ${COSINE_THRESHOLD:-0.25}
 
       # Swagger Configuration
       SWAGGER_URL: ${SWAGGER_URL:-/api/docs}

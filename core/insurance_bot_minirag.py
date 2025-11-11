@@ -201,8 +201,9 @@ class InsuranceBotMiniRAG:
             ),
         )
 
-        # Cache cho response
-        self.response_cache = {}
+        # Cache cho response với TTL
+        self.response_cache: Dict[str, Dict] = {}
+        self.cache_ttl = 3600  # 1 giờ
         print("✅ Insurance Bot with MiniRAG initialized!")
 
     def extract_keywords(self, question: str):
@@ -228,29 +229,96 @@ class InsuranceBotMiniRAG:
         return final_keywords[:5]
 
     async def chat(self, question: str) -> str:
-        """Chat với bot sử dụng MiniRAG"""
+        """Chat với bot sử dụng MiniRAG - Tối ưu cho tốc độ < 15s"""
+        start_time = time.time()
         print(f"👤 Question: {question}")
 
         # Check cache first
         cache_key = question.lower().strip()
         if cache_key in self.response_cache:
-            print("📋 Using cached response")
-            return self.response_cache[cache_key]
+            entry = self.response_cache[cache_key]
+            if time.time() - entry['timestamp'] < self.cache_ttl:
+                print(f"📋 Using cached response (saved {time.time() - entry['timestamp']:.1f}s ago)")
+                return entry['answer']
+            else:
+                # Cache expired
+                del self.response_cache[cache_key]
 
-        print("🔍 Querying MiniRAG...")
+        print("🔍 Querying MiniRAG (optimized for speed)...")
 
         try:
-            # Query MiniRAG
-            answer = await self.rag.aquery(question, param=QueryParam(mode="mini"))
+            # Tối ưu QueryParam để giảm thời gian xử lý xuống < 15s:
+            # - top_k: 5 (thay vì 60) - giảm số lượng kết quả cần xử lý
+            # - max_token_for_node_context: 200 (thay vì 500) - giảm context size
+            # - max_token_for_text_unit: 1500 (thay vì 4000) - giảm text chunks
+            # - Thử "naive" mode trước (nhanh nhất, chỉ dùng vector search)
+            # - Nếu không đủ tốt, fallback sang "light" mode
+            query_param = QueryParam(
+                mode="naive",  # Naive mode nhanh nhất - chỉ dùng vector search, không dùng graph
+                top_k=5,  # Giảm từ 60 xuống 5 để tăng tốc tối đa
+                max_token_for_text_unit=1500,  # Giảm từ 4000 xuống 1500
+            )
+            
+            query_start = time.time()
+            try:
+                answer = await self.rag.aquery(question, param=query_param)
+                query_time = time.time() - query_start
+                
+                # Nếu naive mode quá chậm (> 10s), thử light mode với top_k nhỏ hơn
+                if query_time > 10.0:
+                    print(f"⚠️ Naive mode took {query_time:.2f}s, trying light mode with top_k=3...")
+                    query_param = QueryParam(
+                        mode="light",
+                        top_k=3,  # Giảm xuống 3 để tăng tốc
+                        max_token_for_node_context=200,
+                        max_token_for_text_unit=1000,
+                        max_token_for_local_context=1000,
+                        max_token_for_global_context=1000,
+                    )
+                    query_start = time.time()
+                    answer = await self.rag.aquery(question, param=query_param)
+                    query_time = time.time() - query_start
+            except Exception as naive_error:
+                # Nếu naive mode fail, fallback sang light mode
+                print(f"⚠️ Naive mode failed: {naive_error}, trying light mode...")
+                query_param = QueryParam(
+                    mode="light",
+                    top_k=5,
+                    max_token_for_node_context=200,
+                    max_token_for_text_unit=1500,
+                    max_token_for_local_context=1500,
+                    max_token_for_global_context=1500,
+                )
+                query_start = time.time()
+                answer = await self.rag.aquery(question, param=query_param)
+                query_time = time.time() - query_start
 
-            # Cache response
-            self.response_cache[cache_key] = answer
+            total_time = time.time() - start_time
+            print(f"⏱️ Query time: {query_time:.2f}s, Total time: {total_time:.2f}s")
+
+            # Cache response với timestamp
+            self.response_cache[cache_key] = {
+                'answer': answer,
+                'timestamp': time.time()
+            }
+
+            # Cleanup expired cache entries (keep cache size manageable)
+            if len(self.response_cache) > 100:
+                current_time = time.time()
+                expired_keys = [
+                    key for key, entry in self.response_cache.items()
+                    if current_time - entry['timestamp'] >= self.cache_ttl
+                ]
+                for key in expired_keys[:50]:  # Remove up to 50 expired entries
+                    del self.response_cache[key]
 
             print(f"💬 MiniRAG Answer: {answer[:100]}...")
             return answer
 
         except Exception as e:
             print(f"❌ MiniRAG query error: {e}")
+            import traceback
+            traceback.print_exc()
             return f"Xin lỗi, hiện tại hệ thống đang gặp sự cố kỹ thuật. Anh/chị vui lòng thử lại sau hoặc liên hệ hotline 0385 10 10 18 để được hỗ trợ ạ."
 
     async def close(self):
