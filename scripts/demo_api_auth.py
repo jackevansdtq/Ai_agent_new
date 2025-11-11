@@ -10,7 +10,7 @@ def demo_api_auth():
     """Demo cách sử dụng API với authentication"""
 
     base_url = "http://localhost:8001"
-    api_key = "insurance-bot-api-key-2024-fiss"
+    api_key = "fiss-c61197f847cc4682a91ada560bbd7119"
 
     print("🚀 DEMO API AUTHENTICATION")
     print("=" * 50)
@@ -98,22 +98,22 @@ def demo_api_auth():
 def demo_curl_commands():
     """Show curl commands for testing"""
 
-    api_key = "insurance-bot-api-key-2024-fiss"
+    api_key = "fiss-c61197f847cc4682a91ada560bbd7119"
 
     print("\n🛠️  CURL COMMANDS FOR TESTING:")
     print("=" * 50)
 
     print("\n# 1. Test with Bearer token:")
-    print(f"""curl -X POST "http://localhost:8001/chat" \\
+    print("""curl -X POST "http://localhost:8001/chat" \\
   -H "Content-Type: application/json" \\
-  -H "Authorization: Bearer {api_key}" \\
-  -d '{{"message": "Xin chào"}}'""")
+  -H "Authorization: Bearer fiss-c61197f847cc4682a91ada560bbd7119" \\
+  -d '{"message": "Xin chào"}'""")
 
     print("\n# 2. Test with X-API-Key:")
-    print(f"""curl -X POST "http://localhost:8001/chat" \\
+    print("""curl -X POST "http://localhost:8001/chat" \\
   -H "Content-Type: application/json" \\
-  -H "X-API-Key: {api_key}" \\
-  -d '{{"message": "Bảo hiểm là gì"}}'""")
+  -H "X-API-Key: fiss-c61197f847cc4682a91ada560bbd7119" \\
+  -d '{"message": "Bảo hiểm là gì"}'""")
 
     print("\n# 3. Test without authentication (should fail):")
     print("""curl -X POST "http://localhost:8001/chat" \\

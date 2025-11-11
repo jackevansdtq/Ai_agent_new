@@ -10,7 +10,7 @@ import time
 def test_api_authentication():
     """Test API authentication"""
     base_url = "http://localhost:8001"
-    api_key = "insurance-bot-api-key-2024-fiss"  # From deploy.env
+    api_key = "fiss-c61197f847cc4682a91ada560bbd7119"  # From deploy.env
 
     print("🔐 TESTING API AUTHENTICATION...")
     print("=" * 50)
