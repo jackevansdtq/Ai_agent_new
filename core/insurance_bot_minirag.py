@@ -30,7 +30,11 @@ if os.path.exists(config_path):
 from minirag import MiniRAG, QueryParam
 from minirag.llm import gpt_4o_mini_complete
 from minirag.utils import EmbeddingFunc
+from minirag.operate import PROMPTS
 from openai import AsyncOpenAI
+
+# Override MiniRAG prompt để sử dụng INSURANCE_BOT_PROMPT tùy chỉnh
+# (sẽ được set sau khi định nghĩa INSURANCE_BOT_PROMPT)
 
 class EmbeddingCache:
     """Cache cho embeddings để tránh gọi API lặp lại"""
@@ -331,15 +335,39 @@ Chỉ liệt kê các bước thực hiện, không giải thích thêm.
 
 - Nếu câu hỏi đã từng trả lời hãy lấy từ bộ nhớ ra để trả lời không cần truy vấn lâu
 
-### LƯU Ý QUAN TRỌNG
+### LƯU Ý QUAN TRỌNG - TRẢ LỜI ĐÚNG TRỌNG TÂM
 
+**1. Khi hỏi về GIÁ/PHÍ/SỐ TIỀN:**
+- **PHẢI tìm và trích dẫn chính xác số tiền từ thông tin được cung cấp**
+- **KHÔNG được nói chung chung** như "mức phí thường được xác định dựa trên nhiều yếu tố"
+- **PHẢI trả lời cụ thể**: "Phí bảo hiểm xe máy là 66.000 VNĐ/năm" (nếu có trong thông tin)
+- Nếu có nhiều mức giá, liệt kê tất cả: "Xe máy dưới 50cc: 55.000 VNĐ, trên 50cc: 60.000 VNĐ"
+- Chỉ được nói "em chưa có thông tin cụ thể" nếu THẬT SỰ không tìm thấy trong thông tin được cung cấp
+
+**2. Trả lời đúng trọng tâm câu hỏi:**
+- Nếu hỏi "giá bao nhiêu" → Trả lời số tiền cụ thể NGAY, không giải thích dài dòng
+- Nếu hỏi "quy trình" → Liệt kê các bước cụ thể
+- Nếu hỏi "điều kiện" → Liệt kê điều kiện cụ thể
+- **KHÔNG trả lời lan man, phải đi thẳng vào vấn đề**
+
+**3. Độ chính xác 100%:**
 - Luôn đảm bảo độ chính xác 100% về số tiền, ngày tháng, điều khoản
-
 - Không tự ý sửa đổi hoặc giải thích sai các quy định pháp luật
-
 - Khi đề cập số liệu, phải rõ ràng (ví dụ: "66.000 VNĐ/năm" thay vì "khoảng 60k")
-
 - Luôn cập nhật thông tin theo quy định mới nhất của Bộ Tài chính
+
+**4. Ví dụ trả lời đúng:**
+
+Khách: "Giá bảo hiểm xe máy bao nhiêu?"
+
+Bot (ĐÚNG): "Dạ, theo quy định hiện hành, phí bảo hiểm bắt buộc trách nhiệm dân sự xe máy là:
+- Xe máy dưới 50cc: 55.000 VNĐ/năm
+- Xe máy trên 50cc: 60.000 VNĐ/năm
+- Xe máy 3 bánh: 290.000 VNĐ/năm
+
+Anh/chị muốn mua bảo hiểm cho loại xe nào ạ?"
+
+Bot (SAI): "Mức phí bảo hiểm xe máy thường được xác định dựa trên nhiều yếu tố, bao gồm loại xe, dung tích động cơ..." (quá chung chung, không có số cụ thể)
 """
 
 class InsuranceBotMiniRAG:
@@ -362,11 +390,30 @@ class InsuranceBotMiniRAG:
             working_dir = './' + working_dir.lstrip('/')
         
         # Tối ưu: Giữ max_tokens đủ để có câu trả lời đầy đủ (1200 cho bảo hiểm cần chi tiết)
-        # Switch to GPT-3.5-turbo: Nhanh hơn 2-3x, vẫn đủ tốt với RAG context
+        # ✅ GPT-4o-mini: Đảm bảo chất lượng câu trả lời chính xác (quan trọng hơn tốc độ)
         llm_max_tokens = int(os.environ.get('OPENAI_LLM_MAX_TOKENS') or config.get('DEFAULT', 'OPENAI_LLM_MAX_TOKENS', fallback='1200'))
-        llm_model = os.environ.get('OPENAI_LLM_MODEL') or config.get('DEFAULT', 'OPENAI_LLM_MODEL', fallback='gpt-3.5-turbo')
+        llm_model = os.environ.get('OPENAI_LLM_MODEL') or config.get('DEFAULT', 'OPENAI_LLM_MODEL', fallback='gpt-4o-mini')
         
         print(f"📁 Working directory: {working_dir}")
+
+        # Override MiniRAG prompt template để sử dụng INSURANCE_BOT_PROMPT
+        # Đảm bảo prompt nhấn mạnh trả lời đúng trọng tâm và số tiền cụ thể
+        PROMPTS["rag_response"] = f"""{INSURANCE_BOT_PROMPT}
+
+---Thông tin từ cơ sở dữ liệu---
+
+{{context_data}}
+
+---Yêu cầu---
+
+Hãy sử dụng thông tin trên để trả lời câu hỏi một cách chính xác và đầy đủ.
+
+**QUAN TRỌNG**: 
+- Nếu câu hỏi về giá/phí/số tiền, PHẢI tìm và trích dẫn số tiền cụ thể từ thông tin trên
+- Trả lời đúng trọng tâm, không lan man
+- Nếu có số tiền trong thông tin trên, PHẢI trả lời số tiền đó, không được nói chung chung
+- Format response: {{response_type}}
+"""
 
         self.rag = MiniRAG(
             working_dir=working_dir,
@@ -473,11 +520,11 @@ class InsuranceBotMiniRAG:
             # Sử dụng only_need_context=True để chỉ lấy context, không generate
             query_param_context = QueryParam(
                 mode="light",
-                top_k=8,
-                max_token_for_text_unit=2500,
-                max_token_for_node_context=400,
-                max_token_for_local_context=2000,
-                max_token_for_global_context=2000,
+                top_k=15,  # Tăng lên 15 để có nhiều context hơn
+                max_token_for_text_unit=3000,  # Tăng từ 2500 lên 3000
+                max_token_for_node_context=600,  # Tăng từ 400 lên 600
+                max_token_for_local_context=3000,  # Tăng từ 2000 lên 3000
+                max_token_for_global_context=3000,  # Tăng từ 2000 lên 3000
                 only_need_context=True,  # Chỉ lấy context, không generate
             )
             
@@ -492,19 +539,28 @@ class InsuranceBotMiniRAG:
             from minirag.operate import PROMPTS
             
             # Build system prompt: Kết hợp INSURANCE_BOT_PROMPT + context
-            # Format: System prompt + Context data
+            # Format: System prompt + Context data với nhấn mạnh trả lời đúng trọng tâm
             sys_prompt_base = INSURANCE_BOT_PROMPT
             sys_prompt_with_context = f"""{sys_prompt_base}
 
-Dưới đây là thông tin từ cơ sở dữ liệu để trả lời câu hỏi:
+---Thông tin từ cơ sở dữ liệu---
 
 {context}
 
-Hãy sử dụng thông tin trên để trả lời câu hỏi một cách chính xác và đầy đủ."""
+---Yêu cầu---
+
+Hãy sử dụng thông tin trên để trả lời câu hỏi một cách chính xác và đầy đủ.
+
+**QUAN TRỌNG**: 
+- Nếu câu hỏi về giá/phí/số tiền, PHẢI tìm và trích dẫn số tiền cụ thể từ thông tin trên
+- Trả lời đúng trọng tâm, không lan man
+- Nếu có số tiền trong thông tin trên, PHẢI trả lời số tiền đó, không được nói chung chung
+- Format: Multiple Paragraphs"""
             
             # Stream trực tiếp từ LLM
+            # ✅ GPT-4o-mini: Đảm bảo chất lượng câu trả lời chính xác
             client = get_openai_client()
-            llm_model = os.environ.get('OPENAI_LLM_MODEL') or config.get('DEFAULT', 'OPENAI_LLM_MODEL', fallback='gpt-3.5-turbo')
+            llm_model = os.environ.get('OPENAI_LLM_MODEL') or config.get('DEFAULT', 'OPENAI_LLM_MODEL', fallback='gpt-4o-mini')
             llm_max_tokens = int(os.environ.get('OPENAI_LLM_MAX_TOKENS') or config.get('DEFAULT', 'OPENAI_LLM_MAX_TOKENS', fallback='1200'))
             
             messages = [
@@ -572,20 +628,20 @@ Hãy sử dụng thông tin trên để trả lời câu hỏi một cách chín
         print("🔍 Querying MiniRAG (optimized for speed + accuracy)...")
 
         try:
-            # Tối ưu cân bằng: Tốc độ + Độ chính xác (quan trọng cho lĩnh vực bảo hiểm)
-            # ✅ Đã switch to GPT-3.5-turbo: Nhanh hơn 2-3x, vẫn đủ tốt với RAG context
-            # ✅ Giữ nguyên tất cả parameters để đảm bảo chất lượng không đổi:
-            # - top_k: 8 (đủ để có kết quả chính xác và đầy đủ)
+            # Tối ưu: Độ chính xác là ưu tiên số 1 (quan trọng cho lĩnh vực bảo hiểm)
+            # ✅ GPT-4o-mini: Đảm bảo chất lượng câu trả lời chính xác
+            # ✅ Tăng top_k để có nhiều context hơn, đảm bảo tìm được thông tin chính xác
+            # - top_k: 12 (tăng từ 8 để có nhiều context hơn, đảm bảo tìm được giá/phí)
             # - max_token_for_text_unit: 2500 (đủ context, không mất từ)
             # - Light mode: Có graph context, chính xác hơn naive mode
             # - max_tokens: 1200 (đủ để có câu trả lời đầy đủ)
             query_param = QueryParam(
                 mode="light",  # Light mode: có graph context, chính xác hơn naive
-                top_k=8,  # Đủ để có kết quả chính xác và đầy đủ (KHÔNG GIẢM)
-                max_token_for_text_unit=2500,  # Đủ context, không mất từ (KHÔNG GIẢM)
-                max_token_for_node_context=400,  # Đủ context cho entities (KHÔNG GIẢM)
-                max_token_for_local_context=2000,  # Đủ context cho local (KHÔNG GIẢM)
-                max_token_for_global_context=2000,  # Đủ context cho global (KHÔNG GIẢM)
+                top_k=15,  # Tăng lên 15 để có nhiều context hơn, đảm bảo tìm được thông tin chính xác (giá, phí, số tiền)
+                max_token_for_text_unit=3000,  # Tăng từ 2500 lên 3000 để có nhiều context hơn
+                max_token_for_node_context=600,  # Tăng từ 500 lên 600 để có nhiều entity context hơn
+                max_token_for_local_context=3000,  # Tăng từ 2500 lên 3000 để có nhiều local context hơn
+                max_token_for_global_context=3000,  # Tăng từ 2500 lên 3000 để có nhiều global context hơn
             )
             
             query_start = time.time()
@@ -597,8 +653,8 @@ Hãy sử dụng thông tin trên để trả lời câu hỏi một cách chín
                 print(f"⚠️ Light mode failed: {light_error}, trying naive mode with top_k=8...")
                 query_param = QueryParam(
                     mode="naive",
-                    top_k=8,  # Vẫn giữ đủ để chính xác
-                    max_token_for_text_unit=2500,  # Vẫn giữ đủ context
+                    top_k=15,  # Tăng lên 15 để có nhiều context hơn
+                    max_token_for_text_unit=3000,  # Tăng từ 2500 lên 3000 để có nhiều context hơn
                 )
                 query_start = time.time()
                 answer = await self.rag.aquery(question, param=query_param)
