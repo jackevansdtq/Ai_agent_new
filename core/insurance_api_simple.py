@@ -549,6 +549,12 @@ def get_or_create_event_loop():
         try:
             # Thử lấy event loop hiện tại
             _global_event_loop = asyncio.get_event_loop()
+            # Kiểm tra xem loop có đang chạy không
+            if _global_event_loop.is_running():
+                # Nếu đang chạy, không thể dùng run_until_complete
+                # Tạo loop mới trong thread riêng
+                _global_event_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(_global_event_loop)
         except RuntimeError:
             # Nếu không có, tạo mới
             _global_event_loop = asyncio.new_event_loop()
@@ -662,8 +668,22 @@ def chat_endpoint():
         start_time = time.time()
 
         # Process message asynchronously - reuse event loop (tối ưu performance)
-        loop = get_or_create_event_loop()
-        response = loop.run_until_complete(bot.chat(message))
+        try:
+            # Thử dùng asyncio.run() - an toàn hơn với Flask
+            response = asyncio.run(bot.chat(message))
+        except RuntimeError as e:
+            # Nếu event loop đã chạy, dùng loop hiện tại
+            loop = get_or_create_event_loop()
+            if loop.is_running():
+                # Nếu loop đang chạy, tạo thread riêng
+                import concurrent.futures
+                import threading
+                if not hasattr(get_or_create_event_loop, '_executor'):
+                    get_or_create_event_loop._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+                future = asyncio.run_coroutine_threadsafe(bot.chat(message), loop)
+                response = future.result(timeout=120)
+            else:
+                response = loop.run_until_complete(bot.chat(message))
 
         processing_time = time.time() - start_time
 
@@ -710,12 +730,25 @@ def chat_stream_endpoint():
             # Convert async generator to sync generator
             async_gen = stream_response()
             try:
-                while True:
-                    try:
-                        chunk = loop.run_until_complete(async_gen.__anext__())
-                        yield chunk
-                    except StopAsyncIteration:
-                        break
+                # Dùng asyncio.run() để chạy async generator
+                import nest_asyncio
+                try:
+                    nest_asyncio.apply()
+                except:
+                    pass
+                
+                # Tạo event loop mới cho generator
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    while True:
+                        try:
+                            chunk = new_loop.run_until_complete(async_gen.__anext__())
+                            yield chunk
+                        except StopAsyncIteration:
+                            break
+                finally:
+                    new_loop.close()
             except Exception as e:
                 logger.error(f"Streaming error: {e}")
                 yield f"data: {json.dumps({'error': str(e), 'done': True})}\n\n"

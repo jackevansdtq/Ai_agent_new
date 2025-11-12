@@ -45,17 +45,26 @@ app.post('/api/chat', async (req, res) => {
         res.json(response.data);
     } catch (error) {
         console.error('❌ Chat API Error:', error.message);
+        console.error('Error code:', error.code);
+        console.error('Error details:', {
+            code: error.code,
+            response: error.response?.status,
+            request: !!error.request,
+            message: error.message
+        });
         
         if (error.response) {
             // API returned error
             res.status(error.response.status).json(error.response.data);
-        } else if (error.request) {
+        } else if (error.request || error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
             // Request made but no response
+            console.error('❌ Cannot connect to API server:', API_URL);
             res.status(503).json({
                 error: {
-                    message: "Không thể kết nối đến API server. Vui lòng kiểm tra lại.",
+                    message: `Không thể kết nối đến API server tại ${API_URL}. Vui lòng kiểm tra lại.`,
                     type: "connection_error",
-                    code: "api_unavailable"
+                    code: "api_unavailable",
+                    api_url: API_URL
                 }
             });
         } else {
