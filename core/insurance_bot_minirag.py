@@ -80,8 +80,31 @@ class EmbeddingCache:
 # Global embedding cache
 embedding_cache = EmbeddingCache()
 
+# Singleton OpenAI client để reuse connection (tối ưu performance)
+_openai_client: Optional[AsyncOpenAI] = None
+
+def get_openai_client() -> AsyncOpenAI:
+    """Get or create singleton OpenAI client với connection pooling"""
+    global _openai_client
+    if _openai_client is None:
+        api_key = os.environ.get('OPENAI_API_KEY') or config.get('DEFAULT', 'OPENAI_API_KEY', fallback=None)
+        base_url = os.environ.get('OPENAI_BASE_URL') or os.environ.get('OPENAI_API_BASE') or config.get('DEFAULT', 'OPENAI_BASE_URL', fallback=None)
+        
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY not found in environment variables or config file")
+        
+        # Tối ưu: reuse connections, timeout ngắn hơn
+        _openai_client = AsyncOpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            timeout=30.0,  # Timeout 30s thay vì default
+            max_retries=2,  # Giảm retries để fail fast
+        )
+        print("✅ OpenAI client initialized (singleton, connection pooling enabled)")
+    return _openai_client
+
 async def get_openai_embedding_func(texts):
-    """Async OpenAI embedding function cho MiniRAG với cache"""
+    """Async OpenAI embedding function cho MiniRAG với cache và connection reuse"""
     try:
         # Check cache cho từng text
         cached_embeddings = []
@@ -99,19 +122,12 @@ async def get_openai_embedding_func(texts):
         # Chỉ gọi API cho texts chưa có trong cache
         if texts_to_fetch:
             print(f"🔍 Fetching embeddings for {len(texts_to_fetch)} texts...")
-            # Ưu tiên đọc từ environment variables, nếu không có thì đọc từ config
-            api_key = os.environ.get('OPENAI_API_KEY') or config.get('DEFAULT', 'OPENAI_API_KEY', fallback=None)
-            base_url = os.environ.get('OPENAI_BASE_URL') or os.environ.get('OPENAI_API_BASE') or config.get('DEFAULT', 'OPENAI_BASE_URL', fallback=None)
             embedding_model = os.environ.get('EMBEDDING_MODEL') or config.get('DEFAULT', 'EMBEDDING_MODEL', fallback='text-embedding-3-small')
             
-            if not api_key:
-                raise ValueError("OPENAI_API_KEY not found in environment variables or config file")
-            
-            client = AsyncOpenAI(
-                api_key=api_key,
-                base_url=base_url
-            )
+            # Reuse singleton client (connection pooling)
+            client = get_openai_client()
 
+            # Batch request với timeout ngắn
             response = await client.embeddings.create(
                 input=texts_to_fetch,
                 model=embedding_model
@@ -345,7 +361,8 @@ class InsuranceBotMiniRAG:
         if not working_dir.startswith('./'):
             working_dir = './' + working_dir.lstrip('/')
         
-        llm_max_tokens = int(os.environ.get('OPENAI_LLM_MAX_TOKENS') or config.get('DEFAULT', 'OPENAI_LLM_MAX_TOKENS', fallback='1000'))
+        # Tối ưu: Giảm max_tokens để tăng tốc generation (800 thay vì 1000)
+        llm_max_tokens = int(os.environ.get('OPENAI_LLM_MAX_TOKENS') or config.get('DEFAULT', 'OPENAI_LLM_MAX_TOKENS', fallback='800'))
         llm_model = os.environ.get('OPENAI_LLM_MODEL') or config.get('DEFAULT', 'OPENAI_LLM_MODEL', fallback='gpt-4o-mini')
         
         print(f"📁 Working directory: {working_dir}")
@@ -411,16 +428,14 @@ class InsuranceBotMiniRAG:
         print("🔍 Querying MiniRAG (optimized for speed)...")
 
         try:
-            # Tối ưu QueryParam để giảm thời gian xử lý xuống < 15s:
-            # - top_k: 5 (thay vì 60) - giảm số lượng kết quả cần xử lý
-            # - max_token_for_node_context: 200 (thay vì 500) - giảm context size
-            # - max_token_for_text_unit: 1500 (thay vì 4000) - giảm text chunks
-            # - Thử "naive" mode trước (nhanh nhất, chỉ dùng vector search)
-            # - Nếu không đủ tốt, fallback sang "light" mode
+            # Tối ưu cực đại để đạt < 16s (best practices từ các công ty lớn):
+            # - top_k: 3 (tối thiểu để vẫn có kết quả tốt)
+            # - max_token_for_text_unit: 1000 (giảm context để tăng tốc)
+            # - Naive mode: Nhanh nhất, chỉ vector search
             query_param = QueryParam(
-                mode="naive",  # Naive mode nhanh nhất - chỉ dùng vector search, không dùng graph
-                top_k=5,  # Giảm từ 60 xuống 5 để tăng tốc tối đa
-                max_token_for_text_unit=1500,  # Giảm từ 4000 xuống 1500
+                mode="naive",  # Naive mode nhanh nhất - chỉ vector search, không dùng graph
+                top_k=3,  # Giảm xuống 3 để tăng tốc tối đa (trade-off: accuracy)
+                max_token_for_text_unit=1000,  # Giảm từ 1500 xuống 1000 để tăng tốc
             )
             
             query_start = time.time()
@@ -428,30 +443,23 @@ class InsuranceBotMiniRAG:
                 answer = await self.rag.aquery(question, param=query_param)
                 query_time = time.time() - query_start
                 
-                # Nếu naive mode quá chậm (> 10s), thử light mode với top_k nhỏ hơn
-                if query_time > 10.0:
-                    print(f"⚠️ Naive mode took {query_time:.2f}s, trying light mode with top_k=3...")
-                    query_param = QueryParam(
-                        mode="light",
-                        top_k=3,  # Giảm xuống 3 để tăng tốc
-                        max_token_for_node_context=200,
-                        max_token_for_text_unit=1000,
-                        max_token_for_local_context=1000,
-                        max_token_for_global_context=1000,
-                    )
+                # Nếu vẫn quá chậm (> 12s), thử với top_k=2
+                if query_time > 12.0:
+                    print(f"⚠️ Query took {query_time:.2f}s, trying with top_k=2...")
+                    query_param.top_k = 2
                     query_start = time.time()
                     answer = await self.rag.aquery(question, param=query_param)
                     query_time = time.time() - query_start
             except Exception as naive_error:
-                # Nếu naive mode fail, fallback sang light mode
-                print(f"⚠️ Naive mode failed: {naive_error}, trying light mode...")
+                # Nếu naive mode fail, fallback sang light mode với top_k nhỏ nhất
+                print(f"⚠️ Naive mode failed: {naive_error}, trying light mode with top_k=2...")
                 query_param = QueryParam(
                     mode="light",
-                    top_k=5,
-                    max_token_for_node_context=200,
-                    max_token_for_text_unit=1500,
-                    max_token_for_local_context=1500,
-                    max_token_for_global_context=1500,
+                    top_k=2,  # Tối thiểu
+                    max_token_for_node_context=150,
+                    max_token_for_text_unit=800,
+                    max_token_for_local_context=800,
+                    max_token_for_global_context=800,
                 )
                 query_start = time.time()
                 answer = await self.rag.aquery(question, param=query_param)

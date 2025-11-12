@@ -539,13 +539,28 @@ OPENAPI_SPEC = {
     ]
 }
 
+# Global event loop để reuse (tối ưu performance)
+_global_event_loop: Optional[asyncio.AbstractEventLoop] = None
+
+def get_or_create_event_loop():
+    """Get or create global event loop để reuse (tối ưu performance)"""
+    global _global_event_loop
+    if _global_event_loop is None or _global_event_loop.is_closed():
+        try:
+            # Thử lấy event loop hiện tại
+            _global_event_loop = asyncio.get_event_loop()
+        except RuntimeError:
+            # Nếu không có, tạo mới
+            _global_event_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(_global_event_loop)
+    return _global_event_loop
+
 def init_bot():
     """Initialize bot synchronously"""
     global bot
     try:
         logger.info("🚀 Initializing Insurance Bot...")
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        loop = get_or_create_event_loop()
         bot = InsuranceBotMiniRAG()
         logger.info("✅ Insurance Bot ready!")
         return True
@@ -646,9 +661,8 @@ def chat_endpoint():
 
         start_time = time.time()
 
-        # Process message asynchronously
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        # Process message asynchronously - reuse event loop (tối ưu performance)
+        loop = get_or_create_event_loop()
         response = loop.run_until_complete(bot.chat(message))
 
         processing_time = time.time() - start_time
