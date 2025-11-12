@@ -210,7 +210,17 @@ async function sendMessage() {
         removeLoading();
         updateStatus('error');
         console.error('❌ Fetch error:', error);
-        const errorMsg = error.message || 'Không thể kết nối đến server. Vui lòng kiểm tra lại.';
+        
+        // Xử lý các loại lỗi khác nhau
+        let errorMsg;
+        if (error.name === 'AbortError') {
+            errorMsg = 'Yêu cầu quá thời gian chờ (timeout > 120s). Vui lòng thử lại với câu hỏi ngắn gọn hơn hoặc liên hệ hotline: 0385 10 10 18';
+        } else if (error.message.includes('fetch') || error.message.includes('network') || error.message.includes('Failed to fetch')) {
+            errorMsg = 'Không thể kết nối đến API server. Vui lòng kiểm tra lại.';
+        } else {
+            errorMsg = error.message || 'Không thể kết nối đến server. Vui lòng kiểm tra lại.';
+        }
+        
         showError(errorMsg);
     } finally {
         // Re-enable input and button
