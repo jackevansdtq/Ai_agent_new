@@ -156,6 +156,10 @@ async function sendMessage() {
     try {
         console.log('📤 Sending message:', message);
         
+        // Tạo AbortController với timeout 120s (2 phút) để tránh timeout với queries phức tạp
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 seconds
+        
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: {
@@ -163,8 +167,11 @@ async function sendMessage() {
             },
             body: JSON.stringify({
                 message: message
-            })
+            }),
+            signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
 
         console.log('📥 Response status:', response.status);
 

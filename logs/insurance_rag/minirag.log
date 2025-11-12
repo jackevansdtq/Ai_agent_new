@@ -810,3 +810,33 @@
 2025-11-12 02:23:03,817 - minirag - INFO - Local query uses 15 entites, 12 relations, 2 text units
 2025-11-12 02:23:05,549 - minirag - INFO - Query: Bảo hiểm xe máy, Giá bảo hiểm, Phí bảo hiểm, top_k: 15, cosine_better_than_threshold: 0.3
 2025-11-12 02:23:05,599 - minirag - INFO - Global query uses 7 entites, 15 relations, 3 text units
+2025-11-12 02:27:48,609 - minirag - INFO - Query: Assessment, Evaluation metrics, Scores, Results, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-12 02:27:48,799 - minirag - INFO - Local query uses 7 entites, 5 relations, 3 text units
+2025-11-12 02:27:50,385 - minirag - INFO - Query: Test, Performance, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-12 02:27:50,457 - minirag - INFO - Global query uses 8 entites, 15 relations, 3 text units
+2025-11-12 02:31:11,307 - minirag - INFO - Logger initialized for working directory: ./logs/insurance_rag
+2025-11-12 02:31:11,311 - minirag - INFO - Load KV json_doc_status_storage with 0 data
+2025-11-12 02:31:11,311 - minirag - INFO - Load KV llm_response_cache with 0 data
+2025-11-12 02:31:11,314 - minirag - INFO - Load KV full_docs with 13 data
+2025-11-12 02:31:11,318 - minirag - INFO - Load KV text_chunks with 96 data
+2025-11-12 02:31:11,678 - minirag - INFO - Loaded graph from ./logs/insurance_rag/graph_chunk_entity_relation.graphml with 3331 nodes, 3142 edges
+2025-11-12 02:31:12,165 - minirag - INFO - Loaded document status storage with 13 records
+2025-11-12 02:34:30,568 - minirag - INFO - Logger initialized for working directory: ./logs/insurance_rag
+2025-11-12 02:34:30,570 - minirag - INFO - Load KV json_doc_status_storage with 0 data
+2025-11-12 02:34:30,570 - minirag - INFO - Load KV llm_response_cache with 0 data
+2025-11-12 02:34:30,573 - minirag - INFO - Load KV full_docs with 13 data
+2025-11-12 02:34:30,576 - minirag - INFO - Load KV text_chunks with 96 data
+2025-11-12 02:34:30,825 - minirag - INFO - Loaded graph from ./logs/insurance_rag/graph_chunk_entity_relation.graphml with 3331 nodes, 3142 edges
+2025-11-12 02:34:31,513 - minirag - INFO - Loaded document status storage with 13 records
+2025-11-12 02:37:34,665 - minirag - INFO - Query: Định nghĩa, Chức năng, Quyền lợi, Rủi ro, Hợp đồng bảo hiểm, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-12 02:37:34,735 - minirag - INFO - Local query uses 15 entites, 37 relations, 3 text units
+2025-11-12 02:37:36,897 - minirag - INFO - Query: Bảo hiểm, Khái niệm, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-12 02:37:36,957 - minirag - INFO - Global query uses 1 entites, 15 relations, 2 text units
+2025-11-12 02:38:11,715 - minirag - INFO - Query: Phí bảo hiểm bắt buộc, Xe máy dưới 50cc, Xe máy trên 50cc, Mức phí, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-12 02:38:11,827 - minirag - INFO - Local query uses 15 entites, 69 relations, 2 text units
+2025-11-12 02:38:13,623 - minirag - INFO - Query: Bảo hiểm xe máy, Giá cả, Chi phí bảo hiểm, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-12 02:38:13,667 - minirag - INFO - Global query uses 7 entites, 15 relations, 2 text units
+2025-11-12 02:39:07,819 - minirag - INFO - Query: 60.000 VNĐ/năm, bao gồm, chưa, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-12 02:39:07,916 - minirag - INFO - Local query uses 15 entites, 27 relations, 2 text units
+2025-11-12 02:39:09,726 - minirag - INFO - Query: Giá bảo hiểm, Thuế, Phí bảo hiểm, top_k: 15, cosine_better_than_threshold: 0.3
+2025-11-12 02:39:09,785 - minirag - INFO - Global query uses 4 entites, 15 relations, 2 text units

@@ -39,7 +39,7 @@ app.post('/api/chat', async (req, res) => {
                 'Authorization': `Bearer ${API_KEY}`,
                 'Content-Type': 'application/json'
             },
-            timeout: 60000 // 60 seconds timeout
+            timeout: 120000 // 120 seconds timeout (tăng lên để tránh timeout với queries phức tạp)
         });
 
         res.json(response.data);
