@@ -397,7 +397,7 @@ class InsuranceBotMiniRAG:
         print(f"📁 Working directory: {working_dir}")
 
         # Override MiniRAG prompt template để sử dụng INSURANCE_BOT_PROMPT
-        # Đảm bảo prompt nhấn mạnh trả lời đúng trọng tâm và số tiền cụ thể
+        # Đảm bảo prompt nhấn mạnh CHỈ trả lời dựa trên database (quan trọng cho bảo hiểm)
         PROMPTS["rag_response"] = f"""{INSURANCE_BOT_PROMPT}
 
 ---Thông tin từ cơ sở dữ liệu---
@@ -406,13 +406,21 @@ class InsuranceBotMiniRAG:
 
 ---Yêu cầu---
 
-Hãy sử dụng thông tin trên để trả lời câu hỏi một cách chính xác và đầy đủ.
+**QUAN TRỌNG - LĨNH VỰC BẢO HIỂM PHẢI CHÍNH XÁC 100%**:
 
-**QUAN TRỌNG**: 
-- Nếu câu hỏi về giá/phí/số tiền, PHẢI tìm và trích dẫn số tiền cụ thể từ thông tin trên
-- Trả lời đúng trọng tâm, không lan man
-- Nếu có số tiền trong thông tin trên, PHẢI trả lời số tiền đó, không được nói chung chung
-- Format response: {{response_type}}
+1. **CHỈ trả lời dựa trên thông tin từ cơ sở dữ liệu ở trên**
+   - Nếu thông tin trên KHÔNG có hoặc KHÔNG liên quan đến câu hỏi, PHẢI nói: "Em xin lỗi, thông tin này em chưa được cập nhật đầy đủ. Để được tư vấn chính xác nhất, anh/chị vui lòng liên hệ hotline: 0385 10 10 18"
+   - KHÔNG được tự suy diễn, tạo thông tin mới, hoặc trả lời dựa trên kiến thức chung
+   - KHÔNG được nói "theo quy định chung" hoặc "thông thường" nếu không có trong thông tin trên
+   - Nếu thông tin trên rỗng hoặc quá ngắn (< 100 ký tự), PHẢI nói "em chưa có thông tin cụ thể"
+
+2. **Nếu câu hỏi về giá/phí/số tiền:**
+   - PHẢI tìm và trích dẫn số tiền cụ thể từ thông tin trên
+   - Nếu KHÔNG có số tiền trong thông tin trên, PHẢI nói "em chưa có thông tin cụ thể về mức phí"
+
+3. **Trả lời đúng trọng tâm:**
+   - Trả lời trực tiếp, không lan man
+   - Format response: {{response_type}}
 """
 
         self.rag = MiniRAG(
@@ -533,6 +541,26 @@ Hãy sử dụng thông tin trên để trả lời câu hỏi một cách chín
             context = await self.rag.aquery(question, param=query_param_context)
             context_time = time.time() - context_start
             print(f"⏱️ Context retrieval: {context_time:.2f}s")
+            print(f"📄 Context length: {len(context) if context else 0} chars")
+            
+            # ✅ QUAN TRỌNG: Kiểm tra context có rỗng hoặc không đủ thông tin không
+            # Lĩnh vực bảo hiểm PHẢI chỉ trả lời dựa trên database
+            if not context or len(context.strip()) < 100:
+                print("⚠️ Context rỗng hoặc quá ngắn - Không trả lời tự sinh")
+                error_message = "Em xin lỗi, thông tin này em chưa được cập nhật đầy đủ. Để được tư vấn chính xác nhất, anh/chị vui lòng:\n- Liên hệ hotline: 0385 10 10 18\n- Email: cskh@fiss.com.vn\n- Hoặc em có thể chuyển anh/chị sang tư vấn viên chuyên môn để được hỗ trợ tốt hơn ạ."
+                yield error_message
+                return
+            
+            # Kiểm tra context có chứa thông tin liên quan đến bảo hiểm không
+            insurance_keywords = ['bảo hiểm', 'phí', 'giá', 'quy định', 'điều khoản', 'hợp đồng', 'bồi thường', 'quyền lợi']
+            context_lower = context.lower()
+            has_insurance_content = any(keyword in context_lower for keyword in insurance_keywords)
+            
+            if not has_insurance_content and len(context.strip()) < 200:
+                print("⚠️ Context không liên quan đến bảo hiểm - Không trả lời tự sinh")
+                error_message = "Em xin lỗi, thông tin này em chưa được cập nhật đầy đủ. Để được tư vấn chính xác nhất, anh/chị vui lòng:\n- Liên hệ hotline: 0385 10 10 18\n- Email: cskh@fiss.com.vn\n- Hoặc em có thể chuyển anh/chị sang tư vấn viên chuyên môn để được hỗ trợ tốt hơn ạ."
+                yield error_message
+                return
             
             # Bước 2: Stream LLM response trực tiếp từ OpenAI
             # Build prompt với context (format giống MiniRAG nhưng dùng INSURANCE_BOT_PROMPT)
@@ -549,13 +577,20 @@ Hãy sử dụng thông tin trên để trả lời câu hỏi một cách chín
 
 ---Yêu cầu---
 
-Hãy sử dụng thông tin trên để trả lời câu hỏi một cách chính xác và đầy đủ.
+**QUAN TRỌNG - LĨNH VỰC BẢO HIỂM PHẢI CHÍNH XÁC 100%**:
 
-**QUAN TRỌNG**: 
-- Nếu câu hỏi về giá/phí/số tiền, PHẢI tìm và trích dẫn số tiền cụ thể từ thông tin trên
-- Trả lời đúng trọng tâm, không lan man
-- Nếu có số tiền trong thông tin trên, PHẢI trả lời số tiền đó, không được nói chung chung
-- Format: Multiple Paragraphs"""
+1. **CHỈ trả lời dựa trên thông tin từ cơ sở dữ liệu ở trên**
+   - Nếu thông tin trên KHÔNG có hoặc KHÔNG liên quan đến câu hỏi, PHẢI nói: "Em xin lỗi, thông tin này em chưa được cập nhật đầy đủ. Để được tư vấn chính xác nhất, anh/chị vui lòng liên hệ hotline: 0385 10 10 18"
+   - KHÔNG được tự suy diễn, tạo thông tin mới, hoặc trả lời dựa trên kiến thức chung
+   - KHÔNG được nói "theo quy định chung" hoặc "thông thường" nếu không có trong thông tin trên
+
+2. **Nếu câu hỏi về giá/phí/số tiền:**
+   - PHẢI tìm và trích dẫn số tiền cụ thể từ thông tin trên
+   - Nếu KHÔNG có số tiền trong thông tin trên, PHẢI nói "em chưa có thông tin cụ thể về mức phí"
+
+3. **Trả lời đúng trọng tâm:**
+   - Trả lời trực tiếp, không lan man
+   - Format: Multiple Paragraphs"""
             
             # Stream trực tiếp từ LLM
             # ✅ GPT-4o-mini: Đảm bảo chất lượng câu trả lời chính xác
@@ -650,7 +685,7 @@ Hãy sử dụng thông tin trên để trả lời câu hỏi một cách chín
                 query_time = time.time() - query_start
             except Exception as light_error:
                 # Nếu light mode fail, fallback sang naive mode với top_k đủ
-                print(f"⚠️ Light mode failed: {light_error}, trying naive mode with top_k=8...")
+                print(f"⚠️ Light mode failed: {light_error}, trying naive mode with top_k=15...")
                 query_param = QueryParam(
                     mode="naive",
                     top_k=15,  # Tăng lên 15 để có nhiều context hơn
@@ -660,8 +695,39 @@ Hãy sử dụng thông tin trên để trả lời câu hỏi một cách chín
                 answer = await self.rag.aquery(question, param=query_param)
                 query_time = time.time() - query_start
 
+            # ✅ QUAN TRỌNG: Kiểm tra answer có hợp lệ không
+            # Lĩnh vực bảo hiểm PHẢI chỉ trả lời dựa trên database
+            answer_stripped = answer.strip() if answer else ""
+            
+            if not answer or len(answer_stripped) < 50:
+                print("⚠️ Answer rỗng hoặc quá ngắn - Trả về message chuẩn")
+                answer = "Em xin lỗi, thông tin này em chưa được cập nhật đầy đủ. Để được tư vấn chính xác nhất, anh/chị vui lòng:\n- Liên hệ hotline: 0385 10 10 18\n- Email: cskh@fiss.com.vn\n- Hoặc em có thể chuyển anh/chị sang tư vấn viên chuyên môn để được hỗ trợ tốt hơn ạ."
+            
+            # Kiểm tra answer có chứa các từ khóa "không biết", "chưa có", "chưa được cập nhật"
+            # Nếu có, đảm bảo format đúng
+            answer_lower = answer_stripped.lower()
+            
+            # Kiểm tra nếu answer không chứa thông tin bảo hiểm cụ thể
+            insurance_keywords_in_answer = ['bảo hiểm', 'phí', 'giá', 'quy định', 'điều khoản', 'hợp đồng', 'bồi thường', 'quyền lợi', 'xe máy', 'ô tô', 'sức khỏe', 'nhân thọ', 'du lịch', 'vnđ', 'đồng']
+            has_insurance_in_answer = any(keyword in answer_lower for keyword in insurance_keywords_in_answer)
+            
+            # Nếu answer không có thông tin bảo hiểm và có các từ "sorry", "don't know", etc.
+            if any(phrase in answer_lower for phrase in ["i'm sorry", "i don't know", "i cannot", "i'm not able", "don't have", "unable to"]):
+                # Nếu LLM tự nói không biết, format lại theo chuẩn
+                if "hotline" not in answer_lower and "0385" not in answer:
+                    answer = "Em xin lỗi, thông tin này em chưa được cập nhật đầy đủ. Để được tư vấn chính xác nhất, anh/chị vui lòng:\n- Liên hệ hotline: 0385 10 10 18\n- Email: cskh@fiss.com.vn\n- Hoặc em có thể chuyển anh/chị sang tư vấn viên chuyên môn để được hỗ trợ tốt hơn ạ."
+            
+            # Nếu answer quá ngắn và không có thông tin bảo hiểm cụ thể, có thể là generic response
+            if len(answer_stripped) < 100 and not has_insurance_in_answer:
+                print("⚠️ Answer quá ngắn và không có thông tin bảo hiểm - Có thể là generic response")
+                # Kiểm tra xem có phải generic response không
+                generic_phrases = ["it seems", "i understand", "i'm here to help", "let me know", "feel free"]
+                if any(phrase in answer_lower for phrase in generic_phrases):
+                    answer = "Em xin lỗi, thông tin này em chưa được cập nhật đầy đủ. Để được tư vấn chính xác nhất, anh/chị vui lòng:\n- Liên hệ hotline: 0385 10 10 18\n- Email: cskh@fiss.com.vn\n- Hoặc em có thể chuyển anh/chị sang tư vấn viên chuyên môn để được hỗ trợ tốt hơn ạ."
+
             total_time = time.time() - start_time
             print(f"⏱️ Query time: {query_time:.2f}s, Total time: {total_time:.2f}s")
+            print(f"📄 Answer length: {len(answer)} chars")
 
             # Cache response với timestamp
             self.response_cache[cache_key] = {
