@@ -504,7 +504,7 @@ Hãy sử dụng thông tin trên để trả lời câu hỏi một cách chín
             
             # Stream trực tiếp từ LLM
             client = get_openai_client()
-            llm_model = os.environ.get('OPENAI_LLM_MODEL') or config.get('DEFAULT', 'OPENAI_LLM_MODEL', fallback='gpt-4o-mini')
+            llm_model = os.environ.get('OPENAI_LLM_MODEL') or config.get('DEFAULT', 'OPENAI_LLM_MODEL', fallback='gpt-3.5-turbo')
             llm_max_tokens = int(os.environ.get('OPENAI_LLM_MAX_TOKENS') or config.get('DEFAULT', 'OPENAI_LLM_MAX_TOKENS', fallback='1200'))
             
             messages = [
